@@ -70,7 +70,7 @@ int search(struct WinString* str, char* part, int index)
     return coin;
 }
 
-int ch(char l, char m)
+int great(char l, char m)
 {
     char s;
     ifstream  in("table.txt");
@@ -92,13 +92,47 @@ bool sort (struct WinString* a, struct WinString* b)
     if(min_len>b->len)  min_len=b->len;
     for(int i=0;i<min_len;i++)
     {
-        grea = ch(a->data[i],b->data[i]);
+        grea = great(a->data[i],b->data[i]);
         if (grea==1) return true;
         if (grea==-1) return false;
     }
     if (a->len < b->len)
         return true;
     return false;
+}
+
+struct WinString* replacer (struct WinString* word, struct WinString* paste, int start_pos, int number)
+{
+    if(start_pos + number >= word->len)
+        number = word->len - start_pos;
+    struct WinString* newString = new struct WinString;
+    newString->data=new char [word->len - number];
+    newString->len = word->len - number;
+    int index = 0;
+    for(int i=0;i<word->len;i++)
+        if(i<start_pos || i>(start_pos + number))
+        {
+            newString->data[index]=word->data[i];
+            index++;
+        }
+    struct WinString* addString = new struct WinString;
+    addString->data=new char [newString->len + paste->len];
+    addString->len=newString->len + paste->len;
+    for(int i=0;i< addString->len;i++)
+    {
+        if(start_pos!=i)
+        {
+            addString->data[index]=newString->data[i];
+            index++;
+        }
+        if(start_pos==i)
+            for(int j=0; j< paste->len; j++)
+            {
+                addString->data[index]=paste->data[j];
+                index++;
+            }
+    }
+    return addString;
 }
 
 int main()
@@ -117,7 +151,7 @@ int main()
     struct WinString* s_A = absolutely_str();
     cout << "B: ";
     struct WinString* s_B = absolutely_str();
-    bool b = sort(s_A, s_B);
+    bool b = sort(s_A, s_B); //Сравниваю две строчки
     if (b){
         cout << s_A->data << endl;
         cout << s_B->data << endl;
@@ -127,5 +161,14 @@ int main()
         cout << s_B->data << endl;
         cout << s_A->data << endl;
     }
+    char x[200], paste[200]; //Замена элементов
+    cout << "string" << endl;
+    cin >> x;
+    cout << "paste" << endl;
+    cin >> paste;
+    struct WinString* new_string = cr_n_str(x);
+    struct WinString* paste_string = cr_n_str(paste);
+    new_string = replacer (new_string, paste_string, 0 , 4 );
+    cout << new_string->data;
     return 0;
 }
