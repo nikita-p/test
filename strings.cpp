@@ -116,7 +116,7 @@ int search(struct MyString* string, int position, struct MyString* piece)
             j=0;
         if(string->word[i] == piece->word[j])
             j++;
-        if(j == piece->len)
+        if(j == piece->len) //Здесь не все варианты проходят, например в слове azazaziz он не найдёт azaziz 
         {
             count++;
             j=0;
