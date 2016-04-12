@@ -15,14 +15,38 @@ using namespace std;
 
 enum op {noth, sum, mult, divis, subtr, sumProg, multProg};
 op state; // Состояние калькулятора
-int a, b;  //Числа в памяти
+float a, b;  //Числа в памяти
 bool cl; //Очистить строку ввода?
 
-string IntToStr(int n)
+string FloatToStr(float n)
 {
+    if(n>-0.00001 && n < 0.00001)
+        n = 0;
     stringstream s;
     s << n;
     return s.str();
+}
+
+float StrToFloat(string s)
+{
+    float c;
+    c = atoi(s.c_str());
+    float k;
+    string s_double;
+    bool n = false;
+    for(string::iterator i=s.begin(); i!=s.end(); i++)
+    {
+        if(n)
+            s_double = s_double + *i;
+        if(*i == '.')
+          n = true;
+    }
+    int len = s_double.length();
+    k = atoi(s_double.c_str());
+    for(int i=0; i<len; i++)
+        k = k/10;
+    c = c+k;
+    return c;
 }
 
 class Auto
@@ -31,81 +55,81 @@ class Auto
     {
         if(s=="")
         {
-            s = IntToStr(a);
+            s = FloatToStr(a);
             b = a;
             cl = true;
             return;
         }
-        b = atoi(s.c_str());
+        b = StrToFloat(s);
         a = a + b;
         cl = true;
-        s = IntToStr(a);
+        s = FloatToStr(a);
     }
     void noth_foo(string& s)
     {
         if(s=="")
         {
-            s = IntToStr(a);
+            s = FloatToStr(a);
             cl = true;
             return;
         }
-        a = atoi(s.c_str());
+        a = StrToFloat(s);
         cl = true;
-        s = IntToStr(a);
+        s = FloatToStr(a);
     }
     void mult_foo(string& s)
     {
         if(s=="")
         {
-            s = IntToStr(a);
+            s = FloatToStr(a);
             b = a;
             cl = true;
             return;
         }
-        b = atoi(s.c_str());
+        b = StrToFloat(s);
         a = a*b;
         cl = true;
-        s = IntToStr(a);
+        s = FloatToStr(a);
     }
     void divis_foo(string& s)
     {
         if(s=="")
         {
-            s = IntToStr(a);
+            s = FloatToStr(a);
             b = a;
             cl = true;
             return;
         }
-        b = atoi(s.c_str());
+        b = StrToFloat(s);
         a = a/b;
         cl = true;
-        s = IntToStr(a);
+        s = FloatToStr(a);
     }
     void subtr_foo(string& s)
     {
         if(s=="")
         {
-            s = IntToStr(a);
+            s = FloatToStr(a);
             b = -a;
             cl = true;
             return;
         }
-        b = - atoi(s.c_str());
+        b = - StrToFloat(s);
         a = a + b;
         cl = true;
-        s = IntToStr(a);
+        s = FloatToStr(a);
     }
     void sumProg_foo(string& s)
     {
         a = a + b;
         cl = true;
-        s = IntToStr(a);
+        s = FloatToStr(a);
     }
     void multProg_foo(string& s)
     {
         a = a * b;
         cl = true;
-        s = IntToStr(a);
+        s = FloatToStr(a);
     }
 
     void state_foo(string& s)
@@ -133,7 +157,7 @@ class Auto
             multProg_foo(s);
             break;
         default:
-            s = IntToStr(a);
+            s = FloatToStr(a);
             break;
         }
     }
@@ -272,6 +296,10 @@ public:
                     button->labelsize(36);
                 }
             }
+        Fl_Button *Point = new Fl_Button( 4*W/6.0 + W/6.0, 4*H/7.0 + 2*H/7.0, W/6.0, H/7.0, ".");
+        Point->callback(button_callback, input);
+        Point->labelfont(FL_BOLD);
+        Point->labelsize(36);
         delete s1;
     }
 };
