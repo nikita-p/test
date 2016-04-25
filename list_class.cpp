@@ -2,147 +2,221 @@
 
 using namespace std;
 
-class list
+ostream& operator<<(ostream& o, string& s)
 {
-    int number, mark;
-    list* next;
+    o << s.c_str();
+    return o;
+}
+
+istream& operator>>(istream& i, string& s)
+{
+    char buf[256];
+    i >> buf;
+    string tmp(buf);
+    s = tmp;
+
+    return i;
+}
 
 
-    void add(int nmbr, int mrk)
+template<typename T>
+class AbstractList
+{
+protected:
+    T _default;
+public :
+    virtual void sort(bool (*f) (T* first, T* second)) = 0;
+    virtual T get(int index) = 0;
+    virtual void set(int index, T data) = 0;
+    virtual void insert(int index, T data) = 0;
+    virtual T remove(int index) = 0;
+    virtual int len() = 0;
+    void push(T data)
     {
-        list* b = new list(number, mark, next);
-        mark =mrk;
-        number = nmbr;
-        next = b;
+        insert(0, data);
     }
-    void add(int nmbr, int mrk, int pos, int count)
+    virtual T pop()
     {
-        if(next == NULL)
-            return;
-        if(pos-1 == count || next->next == NULL)
-        {
-            list* b = new list(nmbr, mrk, next);
-            next = b;
-        }
+        if (empty())
+            return _default;
         else
-            next->add(nmbr,mrk,pos,count+1);
+            return remove(0);
     }
-
-public:
-    list()
+    virtual bool empty()
     {
-        this->number=0;
-        this->mark=0;
-        this->next=NULL;
+        return len() == 0;
     }
-    list(int nmbr, int mrk)
+    virtual ostream& print(ostream& o)
     {
-        this->number = nmbr;
-        this->mark = mrk;
-        this->next = NULL;
-    }
-    list(int nmbr, int mrk, list* nxt)
-    {
-        this->number = nmbr;
-        this->mark = mrk;
-        this->next = nxt;
-    }
-    void print(ostream& o)
-    {
-        if(next == NULL)
-            return;
-        o << number << '\t' << mark << endl;
-        next->print(o);
-    }
-
-    void add(int nmbr, int mrk, int pos)
-    {
-        if(pos==0)
-            add(nmbr, mrk);
-        else
-            add(nmbr, mrk, pos, 0);
-    }
-    void add(istream& a, ostream& o)
-    {
-        int nmbr, mrk;
-        o << "Number: ";
-        a >> nmbr;
-        o << "Mark: ";
-        a >> mrk;
-        this->add(nmbr, mrk);
-    }
-    void del(int pos)
-    {
-        if(pos==0)
+        for (int i = 0; i < len(); i ++)
         {
-            list* b = next;
-            mark=next->mark;
-            number = next->number;
-            next = next->next;
-            delete b;
+            o << get(i) << endl;
         }
-        del(pos, 0);
+        return o;
     }
-    void del(int pos, int i)
+    virtual istream& read(istream& in)
     {
-        if(next == NULL)
-            return;
-        if(i==pos-1)
+        int count;
+        in >> count;
+        for (int i = 0 ; i < count ; i ++)
         {
-            list* b = next;
-            next = next->next;
-            delete b;
-            return;
+            T tmp;
+            in >> tmp;
+            insert(len(), tmp);
         }
-        next->del(pos,i+1);
-    }
-
-    bool great()
-    {
-        if(next->number > next->next->number)
-            return true;
-        return false;
-    }
-
-    void sort(int& len)
-    {
-        if(next->next->next==NULL)
-        {
-            return;
-        }
-        if(great())
-        {
-            list* tmp = next;
-            next = next->next;
-            tmp->next = next->next;
-            next->next = tmp;
-        }
-        len++;
-        next->sort(len);
-    }
-    void sort()
-    {
-        add(0,0,0);
-        int len=0, j;
-        sort(len);
-        j=len;
-        for(int i=0;i<j; i++) //Здесь можно оптимизировать
-            sort(len);
-        del(0);
+        return in;
     }
 };
 
-int main()
+template <typename T>
+class NewList : public AbstractList<T>
 {
-    list firstCourse;
-    firstCourse.add(1, 1, 0);
-    firstCourse.add(2, 2, 0);
-    firstCourse.add(3, 3, 0);
-    firstCourse.add(12,1,12);
-    firstCourse.add(4, 3, 0);
-    firstCourse.del(2);
-    firstCourse.sort();
-    firstCourse.print(cout);
-    return 0;
+    int headNumber;
+    T _data;
+    NewList* next;
+public:
+    NewList(NewList* Next)
+    {
+        this->headNumber = 0;
+        this->next = Next;
+    }
+    NewList(T Default) //init constructor with _default
+    {
+        this->headNumber = 0;
+        this->_default = Default;
+        this->next = new NewList(NULL); // end constructor
+    }
+    NewList() //init constructor without _default
+    {
+        this->headNumber = 0;
+        this->next = new NewList(NULL); // end constructor
+    }
+    NewList(T Data, T Default, NewList* Next) //add constructor
+    {
+        this->headNumber = 0;
+        this->_default = Default;
+        this->_data = Data;
+        this->next = Next;
+    }
+    NewList(const NewList& a) //copy constructor
+    {
+        this->headNumber = a.headNumber + 1;
+        this->_data = a._data;
+        this->_default = a._default;
+        this->next = a.next;
+    }
+    NewList& operator = (NewList& a)
+    {
+        NewList* tmp = new NewList;
+        tmp->_default = a._default;
+        tmp->_data = a._data;
+        tmp->next = a.next;
+        tmp->headNumber = a.headNumber + 1;
+        return *tmp;
+    }
+    virtual ~NewList() //destructor
+    {
+        if(this->headNumber != 0)
+        {
+            //cout << "haha";
+            next == NULL;
+        }
+    }
+    virtual T get(int index)
+    {
+        if(index>=len() || index < 0)
+            return this->_default;
+        if(index == 0)
+            return next->_data;
+        else
+            return next->get(index-1);
+    }
+    int len(int c)
+    {
+        if(next == NULL)
+            return c;
+        else
+            return next->len(c+1);
+    }
+    virtual int len()
+    {
+        return len(-1);
+    }
+    virtual void set(int index, T data)
+    {
+        if(next->next == NULL || index < 0)
+            return;
+        if(index == 0)
+        {
+            next->_data = data;
+            return;
+        }
+        else
+            return next->set(index-1, data);
+    }
+    virtual void insert(int index, T data)
+    {
+        if(next == NULL || index < 0)
+            return;
+        if(index == 0 || next->next == NULL)
+        {
+            next = new NewList(data, this->_default, next);
+            return;
+        }
+        else
+            return next->insert(index-1, data);
+    }
+    virtual T remove(int index)
+    {
+        if(next->next == NULL || index < 0)
+            return this->_default;
+        if(index == 0)
+        {
+            NewList* Del = next;
+            next = next->next;
+            Del->headNumber++;
+            T s = Del->_data;
+            delete Del;
+            return s;
+        }
+        else
+            return next->remove(index - 1);
+    }
+    virtual void sort(bool (*f) (T* first, T* second))
+    {
+        for(int i=0; i < len(); i++)
+            swapper(f);
+    }
+    virtual void swapper(bool (*f) (T* first, T* second))
+    {
+        if(next->next->next == NULL)
+            return;
+        else
+        {
+            if(f(&(next->_data), &(next->next->_data)))
+            {
+                NewList* tmp = next->next;
+                next->next = next->next->next;
+                tmp->next = next;
+                next = tmp;
+            }
+            return next->swapper(f);
+        }
+    }
+};
+
+
+template <typename T>
+bool gr(T* first, T* second)
+{
+    if(*first > *second)
+        return true;
+    return false;
+}
+
+NewList<string>* get_init()
+{
+    NewList<string>* init = new NewList<string>("EMPTY!");
+    return init;
 }
 
