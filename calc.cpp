@@ -52,12 +52,14 @@ float StrToFloat(string s)
 
 class Auto
 {
-    void sum_foo(string& s)
+    void sum_foo(string& s, char c)
     {
         if(s=="")
         {
-            s = FloatToStr(a);
             b = a;
+            if(c == '=')
+                a = a + a;
+            s = FloatToStr(a);
             cl = true;
             return;
         }
@@ -66,7 +68,7 @@ class Auto
         cl = true;
         s = FloatToStr(a);
     }
-    void noth_foo(string& s)
+    void noth_foo(string& s, char)
     {
         if(s=="")
         {
@@ -78,12 +80,14 @@ class Auto
         cl = true;
         s = FloatToStr(a);
     }
-    void mult_foo(string& s)
+    void mult_foo(string& s, char c)
     {
         if(s=="")
         {
-            s = FloatToStr(a);
             b = a;
+            if(c == '=')
+                a = a * a;
+            s = FloatToStr(a);
             cl = true;
             return;
         }
@@ -92,26 +96,30 @@ class Auto
         cl = true;
         s = FloatToStr(a);
     }
-    void divis_foo(string& s)
+    void divis_foo(string& s, char c)
     {
         if(s=="")
         {
-            s = FloatToStr(a);
             b = 1/a;
+            if(c == '=')
+                a = a/a;
+            s = FloatToStr(a);
             cl = true;
             return;
         }
-        b = StrToFloat(s);
-        a = a/b;
+        b = 1/StrToFloat(s);
+        a = a*b;
         cl = true;
         s = FloatToStr(a);
     }
-    void subtr_foo(string& s)
+    void subtr_foo(string& s, char c)
     {
         if(s=="")
         {
-            s = FloatToStr(a);
             b = -a;
+            if(c == '=')
+                a = a - a;
+            s = FloatToStr(a);
             cl = true;
             return;
         }
@@ -133,23 +141,23 @@ class Auto
         s = FloatToStr(a);
     }
 
-    void state_foo(string& s)
+    void state_foo(string& s, char c)
     {
         switch (state) {
         case sum:
-            sum_foo(s);
+            sum_foo(s, c);
             break;
         case noth:
-            noth_foo(s);
+            noth_foo(s, c);
             break;
         case mult:
-            mult_foo(s);
+            mult_foo(s, c);
             break;
         case divis:
-            divis_foo(s);
+            divis_foo(s, c);
             break;
         case subtr:
-            subtr_foo(s);
+            subtr_foo(s, c);
             break;
         case sumProg:
             sumProg_foo(s);
@@ -172,30 +180,18 @@ class Auto
         s = "";
         cl = false;
     }
-    void switch_state(char c, string& s)
+    void switch_state(char c, string& )
     {
         switch (c) {
         case '=':
-            if(state == sumProg)
+            if(state == sumProg || state == sum || state == subtr)
             {
                 state = sumProg;
                 break;
             }
-            if(state == multProg)
+            if(state == multProg || state == mult || state == divis)
             {
                 state = multProg;
-                break;
-            }
-            if(state == sum || state == subtr)
-            {
-                state = sumProg;
-                state_foo(s);
-                break;
-            }
-            if(state == mult || state == divis)
-            {
-                state = multProg;
-                state_foo(s);
                 break;
             }
             state = noth;
@@ -217,30 +213,30 @@ public:
         case '+':
             if(state==sumProg || state == multProg)
                 state = noth;
-            state_foo(s);
+            state_foo(s, c);
             state = sum;
             break;
         case '-':
             if(state==sumProg || state == multProg)
                 state = noth;
-            state_foo(s);
+            state_foo(s, c);
             state = subtr;
             break;
         case '*':
             if(state==sumProg || state == multProg)
                 state = noth;
-            state_foo(s);
+            state_foo(s, c);
             state = mult;
             break;
         case '/':
             if(state==sumProg || state == multProg)
                 state = noth;
-            state_foo(s);
+            state_foo(s, c);
             state = divis;
             break;
         case '=':
         {
-            state_foo(s);
+            state_foo(s, c);
             switch_state(c, s);
             break;
         }
@@ -346,3 +342,4 @@ int main(int argc, char **argv)
     window->show(argc, argv);
     return Fl::run();
 }
+
