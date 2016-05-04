@@ -1,0 +1,302 @@
+#include <iostream>
+
+using namespace std;
+
+class Complex
+{
+	float re;
+	float im;
+public:
+	Complex()
+	{
+		re = 0;
+		im = 0;
+	}
+	Complex(float R, float I)
+	{
+		re = R;
+		im = I;
+	}
+	~Complex()
+	{
+		re = 0;
+		im = 0;
+	}
+	Complex(const Complex& c)
+	{
+		this->re = c.re;
+		this->im = c.im;
+	}
+	Complex operator = (const Complex& c)
+	{
+		this->re = c.re;
+		this->im = c.im;
+		return (*this);
+	}
+	Complex operator + (Complex& c)
+	{
+		Complex _new(this->re + c.re, this->im + c.im);
+		return _new;
+	}
+	Complex operator - (Complex& c)
+	{
+		Complex _new(this->re - c.re, this->im - c.im);
+		return _new;
+	}
+	Complex operator * (Complex& c)
+	{
+		Complex _new(this->re * c.re - this->im * c.im, this->im * c.re + this->re * c.im);
+		return _new;
+	}
+	Complex operator * (int c)
+	{
+		this->re = this->re * c;
+		this->im = this->im * c;
+		return (*this);
+	}
+	Complex operator / (int c)
+	{
+		this->re = this->re / c;
+		this->im = this->im / c;
+		return (*this);
+	}
+	Complex sopr()
+	{
+		this->im = -this->im;
+		return *this;
+	}
+	Complex operator / (Complex& c)
+	{
+		Complex _new(0,0);
+		Complex ch (this->re, this->im);
+		Complex z = c * c.sopr();
+		float ReZ = z.re;
+		_new = c.sopr() * ch;
+		_new.re = _new.re / ReZ;
+		_new.im = _new.im / ReZ; 
+		return _new;
+	}
+	Complex operator += (Complex& c)
+	{
+		this->re += c.re;
+		this->im += c.im;
+		return (*this);
+	}
+	float getRe()
+	{
+		return this->re;
+	}
+	float getIm()
+	{
+		return this->im;
+	}
+};
+
+ostream& operator << (ostream& o, Complex c)
+{
+	o << c.getRe() << '+' << c.getIm() << 'i';
+	return o;
+}
+
+class Matrix
+{
+	int m, n;
+	Complex** data;
+public:
+	Matrix()
+	{
+		n = 0;
+		m = 0;
+		data = NULL;
+	}
+	Matrix(int M, int N)
+	{
+		if (N <= 0 || M <= 0)
+		{
+			n = 0;
+			m = 0;
+			data = NULL;
+			return;
+		}
+		n = N;
+		m = M;
+		data = new Complex* [M];
+		for (int i = 0; i < M; i++)
+			data[i] = new Complex [N];
+	}
+	~Matrix()
+	{
+		m = 0;
+		n = 0;
+		for (int i = 0; i < getM(); i++)
+			delete[] data[i];
+		delete[] data;
+	}
+	Matrix(const Matrix& c)
+	{
+		this->m = c.m;
+		this->n = c.n;
+		this->data = new Complex*[m];
+		for (int i = 0; i < m; i++)
+			this->data[i] = new Complex[n];
+
+		for (int i = 0; i < m; i++)
+			for (int j = 0; j < n; j++)
+			{
+				this->set(i, j, c.data[i][j]);
+			}
+	}
+	Matrix operator = (const Matrix& c)
+	{
+		this->m = c.m;
+		this->n = c.n;
+		if (this->data != NULL)
+		{
+			for (int i = 0; i < getM(); i++)
+				delete[] data[i];
+			delete[] data;
+		}
+		this->data = new Complex* [m];
+		for (int i = 0; i < m; i++)
+			this->data[i] = new Complex[n];
+
+		for (int i = 0; i < m; i++)
+			for (int j = 0; j < n; j++)
+			{
+			this->set(i, j, c.data[i][j]);
+			}
+		return (*this);
+	}
+	int getM()
+	{
+		return this->m;
+	}
+	int getN()
+	{
+		return this->n;
+	}
+	void set(int i, int j, Complex d)
+	{
+		if (i > m || j > n)
+			return;
+		data[i][j] = d;
+		return;
+	}
+	Complex get(int i, int j)
+	{
+		if (i > m || j > n)
+		{
+			Complex c(0, 0);
+			return c;
+		}
+		return data[i][j];
+	}
+	Matrix operator + (Matrix m)
+	{
+		if (m.getM() != this->getM() || m.getN() != this->getN())
+		{
+			Matrix _n(0, 0);
+			return _n;
+		}
+		Matrix _new(getM(), getN());
+		for (int i = 0; i < this->m; i++)
+			for (int j = 0; j < this->n; j++)
+				_new.set(i, j, m.get(i, j) + this->get(i, j));
+		return _new;
+	}
+	int hevis(int i, int I)
+	{
+		return (i > I);
+	}
+	Matrix cut(int I, int J)
+	{
+		if ((getM() - 1) <= 0)
+			return Matrix(0, 0);
+		Matrix min(getM() - 1, getN() - 1);
+		for (int i = 0; i < getM(); i++)
+			for (int j = 0; j < getN(); j++)
+			{
+				if (i == I || j == J)
+				{}
+				else
+					min.set(i - hevis(i, I), j  - hevis(j, J), this->get(i, j));
+			}
+		return min;
+	}
+	int sign(int i, int j)
+	{
+		return (-(2 * ((i + j) % 2) - 1));
+	}
+	Complex determinant()
+	{
+		Complex detFull(0 , 0);
+		if (getM() != getN())
+			return detFull;
+		if (getM() == 1)
+		{
+			return get(0, 0);
+		}
+		for (int i = 0; i < getM(); i++)
+			for (int j = 0; j < getN(); j++)
+			{
+			Matrix min(getM() - 1, getN() - 1);
+			min = this->cut(i, j);
+			detFull = detFull + get(i, j) * min.determinant() * sign(i, j);
+			}
+		return detFull;
+	}
+	Complex SuperDet() //Magic function!
+	{
+		int fN = 1;
+		for (int i = 1; i < getN() + 1; i++)
+			fN = fN*i;
+		return determinant() / fN;
+	}
+
+};
+
+ostream& operator << (ostream& o, Matrix c)
+{
+	for (int i = 0; i < c.getM(); i++)
+	{
+		for (int j = 0; j < c.getN(); j++)
+			o << c.get(i, j) << '\t';
+		o << endl;
+	}
+	return o;
+}
+
+void test1()
+{
+	Matrix a(2, 3);
+	Matrix b(2, 3);
+	for (int i = 0; i < a.getM(); i++)
+		for (int j = 0; j < a.getN(); j++)
+		{
+		a.set(i, j, Complex(0, 1));
+		b.set(i, j, Complex(1, 0));
+		}
+	Matrix t;
+	t = a + b;
+	cout << t << endl;
+}
+
+void test2()
+{
+	Matrix a(3, 3);
+	a.set(0,0,Complex(1,0));
+	a.set(1, 1, Complex(2, 1));
+	a.set(1, 2, Complex(3, 0)); 
+	a.set(2, 0, Complex(0, -1));
+	a.set(2, 1, Complex(4, 0));
+	a.set(2, 2, Complex(0, -1));
+	cout << a << endl;
+	cout << a.SuperDet() << endl;
+}
+
+int main()
+{
+	test1();
+	test2();
+	return 0;
+}
