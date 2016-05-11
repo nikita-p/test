@@ -145,7 +145,7 @@ public:
     void changeVelocity(vector<CData>::iterator i, vector<CData>::iterator j)
     {
         if(sqrt(dist(*i, *j)) > TheCriticalDistance(i,j)){
-            float Force = G * (*i).getM() * (*j).getM() * ( pow((dist(*i, *j)),ForcePower/2) ); //Force
+            float Force = G * (*i).getM() * (*j).getM() * ( pow(sqrt(dist(*i, *j)),ForcePower) ); //Force
             (*i).plusVx( sgn((*i).getX(), (*j).getX())*Force*dt/(*i).getM() );
             (*j).plusVx( - sgn((*i).getX(), (*j).getX())*Force*dt/(*j).getM() );
             (*i).plusVy( sgn((*i).getY(), (*j).getY())*Force*dt/(*i).getM() );
@@ -195,7 +195,7 @@ vector<CData> createCircles()
     a.insert(a.end(),CData(200,400,4));
     return a;
 }
-
+/*
 void b_call(Fl_Widget*, void* d)
 {
     pair<vector<CData>*, Fl_Slider** >* p = (pair<vector<CData>*, Fl_Slider** >*)d;
@@ -241,7 +241,7 @@ void play()
 void slid_callback(Fl_Widget* slid, void*)
 {
     Fl_Slider* sl = (Fl_Slider*)slid;
-    ForcePower = sl->value();
+    //ForcePower = sl->value();
 }
 
 void force()
@@ -261,14 +261,14 @@ void drawSetup(vector<CData>* a)
     play();
     force();
 }
-
+*/
 int main()
 {    
     dt = 1;
-    ForcePower = -2;
+    ForcePower = -1;
     vector<CData> a = createCircles();
     Circle c(&a);
-    drawSetup(&a);
+    //drawSetup(&a);
     Fl::add_timeout(0.1, callback, &c);
     c.show();
     return(Fl::run());
