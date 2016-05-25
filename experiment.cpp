@@ -19,7 +19,7 @@ static float ForcePower; //Степень при расстоянии в сил�
 
 class CData
 {
-    float X, Y, Vx, Vy, Vr, Vt;
+    float X, Y, Vx, Vy, Vrx, Vry, Vtx, Vty;
     float M; //Радиус зависит от массы
 public:
     CData(int x, float y)    {
@@ -41,6 +41,14 @@ public:
         Y = y;
         Vx = 0;
         Vy = vy;
+        M = m;
+    }
+    CData(int x, int y, float m, float vx, float vy)    {
+        X = x;
+        Y = y;
+        Vx = 0;
+        Vy = vy;
+        Vx = vx;
         M = m;
     }
     CData(const CData& t)  {
@@ -67,7 +75,7 @@ public:
     float getVy()    {
         return Vy; }
     float getR()    {
-        return 20*M; }
+        return 50*M; }
     float getM()    {
         return M; }
     void setX(float m) {
@@ -94,7 +102,7 @@ class Circle : public Fl_Double_Window
 {
     vector<CData>* data;
     float dt, G;
-    float zoom; //Масштаб
+    float zoom, cX, cY; //Масштаб
     void draw()
     {
         Fl_Double_Window::draw();
@@ -124,12 +132,35 @@ class Circle : public Fl_Double_Window
                 for(vector<CData>::iterator i = data->begin(); i!= data->end(); i++)
                     (*i).Y -= 10/zoom;
                 return 1;
-              }else {
+              }
+              if (Fl::event_key() == 'f') {
+                  ForcePower = ForcePower - 0.5;
+                  return 1;
+                }
+              if (Fl::event_key() == 'd') {
+                  ForcePower = ForcePower + 0.5;
+                  return 1;
+                }
+              if (Fl::event_key() == 'c') {
+                  int len = data->size();
+                  for(int i = 0; i<len-1; i++){
+                      data->pop_back();
+                  }
+                  return 1;
+                }
+              if (Fl::event_key() == 's') {
+                  for(vector<CData>::iterator i = data->begin(); i!= data->end(); i++)                  {
+                      (*i).Vy = 0; (*i).Vx = 0; }
+                  return 1;
+                }
+              else {
                 return 0;
               }
             case FL_PUSH:
               if(Fl::event_x() >0 && Fl::event_y() > 0){
-                    data->insert(data->begin(),CData(Fl::event_x()/zoom,Fl::event_y()/zoom,2));
+                    //data->insert(data->begin(),CData(Fl::event_x()/zoom,Fl::event_y()/zoom,2));
+                    cX = Fl::event_x();
+                    cY = Fl::event_y();
                     return 1;}
           case FL_MOUSEWHEEL:{
               float zoomOld = zoom;
@@ -138,11 +169,23 @@ class Circle : public Fl_Double_Window
               if(Fl::event_dy() > 0){
                     zoom = zoom/1.2;  }
               for(vector<CData>::iterator i = data->begin(); i!= data->end(); i++){
-                  (*i).X = (*i).X - Fl::event_x() * (1 - (zoomOld/zoom));
-                  (*i).Y = (*i).Y - Fl::event_y() * (1 - (zoomOld/zoom));}
+                  (*i).X = (*i).X - Fl::event_x()/zoomOld + Fl::event_x()/zoom; //YAHOO!!!
+                  (*i).Y = (*i).Y - Fl::event_y()/zoomOld + Fl::event_y()/zoom;
+              }
               return 0;
           }
-            default:
+          case FL_DRAG:{
+              if(Fl::event_button() == FL_RIGHT_MOUSE)
+                  for(vector<CData>::iterator i = data->begin(); i!= data->end(); i++){
+                      (*i).X = (*i).X - (cX - Fl::event_x())/(10*zoom);
+                      (*i).Y = (*i).Y - (cY - Fl::event_y())/(10*zoom);}
+              return 0;
+          }
+          case FL_RELEASE:          {
+              if(Fl::event_button() == FL_LEFT_MOUSE)
+                  data->insert(data->begin(),CData(cX/zoom,cY/zoom,2,(Fl::event_x() - cX)/10,(Fl::event_y() - cY)/10));
+           }
+          default:
               return Fl_Double_Window::handle(ev);
           }
         }
@@ -172,6 +215,7 @@ public:
         return (*j).getR() + (*i).getR();    }
     void impulse(vector<CData>::iterator i, vector<CData>::iterator j)
     {
+/*
         float M1 = (*i).getM();
         float M2 = (*j).getM();        
         float Energy = M1*(pow((*i).Vx,2) + pow((*i).Vy,2)) + M2*(pow((*j).Vx,2) + pow((*j).Vy,2));
@@ -189,14 +233,48 @@ public:
         (*i).Vy = - (*i).Vr * sin(a) + (*i).Vt * cos(a);
         (*j).Vx = (*j).Vr * cos(a) + (*j).Vt * sin(a);
         (*j).Vy = - (*j).Vr * sin(a) + (*j).Vt * cos(a);
-/*
-        float k = sqrt((M1*(pow((*i).Vx,2) + pow((*i).Vy,2)) + M2*(pow((*j).Vx,2) + pow((*j).Vy,2)))/Energy);
-        cout << k <<endl;
-        (*i).Vx = (*i).Vx / k;
-        (*i).Vy = (*i).Vy / k;
-        (*j).Vx = (*j).Vx / k;
-        (*j).Vy = (*j).Vy / k;
+
+        float M1 = (*i).getM();
+        float M2 = (*j).getM();
+        float fullM = M1 + M2;
+        float VcenX = (M1*(*i).Vx + M2*(*j).Vx)/fullM;
+        float VcenY = (M1*(*i).Vy + M2*(*j).Vy)/fullM;
+        (*i).Vr = - ((*i).Vx - VcenX);
+        (*i).Vt = - ((*i).Vy - VcenY);
+        (*j).Vr = - ((*j).Vx - VcenX);
+        (*j).Vt = - ((*j).Vy - VcenY);
+        (*i).Vx = (*i).Vr + VcenX;
+        (*i).Vy = (*i).Vt + VcenY;
+        (*j).Vx = (*j).Vr + VcenX;
+        (*j).Vy = (*j).Vt + VcenY;
 */
+        float M1 = (*i).getM();
+        float M2 = (*j).getM();
+        float fullM = M1 + M2;
+        float lx = ((*j).getX() - (*i).getX())/dist(*i,*j);
+        float ly = ((*j).getY() - (*i).getY())/dist(*i,*j);
+        (*i).Vrx = ((*i).Vx * lx + (*i).Vy * ly)*lx;
+        (*i).Vry = ((*i).Vx * lx + (*i).Vy * ly)*ly;
+        (*i).Vtx = (*i).Vx - (*i).Vrx;
+        (*i).Vty = (*i).Vy - (*i).Vry;
+        (*j).Vrx = ((*j).Vx * lx + (*j).Vy * ly)*lx;
+        (*j).Vry = ((*j).Vx * lx + (*j).Vy * ly)*ly;
+        (*j).Vtx = (*j).Vx - (*j).Vrx;
+        (*j).Vty = (*j).Vy - (*j).Vry;
+
+        float V1x = (*i).Vrx;
+        float V2x = (*j).Vrx;
+        float V1y = (*i).Vry;
+        float V2y = (*j).Vry;
+        (*i).Vrx = ((M1 - M2)*V1x + 2 * M2 * V2x)/fullM;
+        (*j).Vrx = ((M2 - M1)*V2x + 2 * M1 * V1x)/fullM;
+        (*i).Vry = ((M1 - M2)*V1y + 2 * M2 * V2y)/fullM;
+        (*j).Vry = ((M2 - M1)*V2y + 2 * M1 * V1y)/fullM;
+
+        (*i).Vx = (*i).Vrx + (*i).Vtx;
+        (*i).Vy = (*i).Vry + (*i).Vty;
+        (*j).Vx = (*j).Vrx + (*j).Vtx;
+        (*j).Vy = (*j).Vry + (*j).Vty;
     }
     int sgn(float i)
     {
@@ -241,7 +319,7 @@ public:
                 changeVelocity(i,j);
                 (*i).changeCoordinats(dt);
                 cintoc(i, j); //Круг внутри круга
-                fl_circle((*i).getX()*zoom, (*i).getY()*zoom, (*i).getR()*zoom);
+                fl_circle((*i).getX()*zoom, (*i).getY()*zoom, (*i).getR()*zoom); //*zoom
             }
     }
 };
@@ -257,74 +335,9 @@ void callback(void* winp)
 vector<CData> createCircles()
 {
     vector<CData> a;
-    a.reserve(10);
-    a.insert(a.end(),CData(300,600,2, -10));
-    a.insert(a.end(),CData(300,300,2, 10));
-    //a.insert(a.end(),CData(200,400,4));
+    a.reserve(50);
+    a.insert(a.end(),CData(300,600,5));
     return a;
-}
-
-void b_call(Fl_Widget*, void* d)
-{
-    pair<vector<CData>*, Fl_Slider** >* p = (pair<vector<CData>*, Fl_Slider** >*)d;
-    Fl_Slider** s = p->second;
-    p->first->insert(p->first->begin(),CData(s[0]->value(),s[1]->value(),s[2]->value()));
-}
-void newCircle(vector<CData>* a)
-{
-    Fl_Slider** sliders = new Fl_Slider* [3];
-    sliders[0] = new Fl_Slider(10,10,30,100, "X");
-    sliders[0]->bounds(MAX_W, 0);
-    sliders[1] = new Fl_Slider(50,10,30,100, "Y");
-    sliders[1]->bounds(MAX_H, 0);
-    sliders[2] = new Fl_Slider(100,10,30,100, "M");
-    sliders[2]->bounds(10,0);
-    Fl_Button* b = new Fl_Button(150, 20, 40, 40, "+");
-    b->box(FL_FLAT_BOX);
-    pair<vector<CData>*, Fl_Slider** >* Pair = new pair<vector<CData>*, Fl_Slider** >(a,sliders);
-    b->callback(b_call, Pair);
-}
-
-void play_callback(Fl_Widget* but, void*)
-{
-     Fl_Button* b = (Fl_Button*)but;
-     if(string(b->label()) == "@||")
-     {
-         b->label("@>");
-     }
-     else
-     {
-         b->label("@||");
-     }
-}
-
-void play()
-{
-    Fl_Button* b = new Fl_Button(150, 120, 40, 40, "@||");
-    b->callback(play_callback);
-}
-
-void slid_callback(Fl_Widget* slid, void*)
-{
-    Fl_Slider* sl = (Fl_Slider*)slid;
-    //ForcePower = sl->value();
-}
-
-void force()
-{
-    Fl_Slider* pow = new Fl_Slider(20,200,30,100, "R^a");
-    pow->bounds(0,-3);
-    pow->callback(slid_callback);
-}
-void drawSetup(vector<CData>* a)
-{
-    int w = MAX_W/5;
-    int h = MAX_H;
-    Fl_Double_Window *controlPanel = new Fl_Double_Window(0,0,w,MAX_H);
-    controlPanel->color(FL_LIGHT2);
-    newCircle(a);
-    play();
-    force();
 }
 
 void cc(Fl_Widget*, void* circle)
@@ -333,38 +346,11 @@ void cc(Fl_Widget*, void* circle)
     c->addData(CData(300,100,2));
 }
 
-
-class ControlPanel
-{
-    Fl_Double_Window* win;
-    Fl_Button* addCircle;
-    Circle* cir;
-public:
-    ControlPanel(int x, int y, int W, int H, Circle* C)
-    {
-        win = new Fl_Double_Window(x,y,W,H);
-        win->color(FL_CYAN);
-        cir = C;
-    }
-    void createCircleButton(int x, int y, int W, int H)
-    {
-        Fl_Button* b = new Fl_Button(x,y,W,H, "+");
-        b->callback(cc, cir);
-    }
-};
-
-void setup(Circle* a)
-{
-    ControlPanel Contr(0,0,MAX_W/5,MAX_H, a);
-    Contr.createCircleButton(30,70,50,50);
-}
-
 int main()
 {
-    ForcePower = -2;
+    ForcePower = -1;
     vector<CData> a = createCircles();
     Circle c(&a);
-    //setup(&c);
     Fl::add_timeout(0.0, callback, &c);
     c.show();
     return(Fl::run());
