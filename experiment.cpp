@@ -197,8 +197,10 @@ public:
         zoom = 1;
         data = v;
         dt = 0.05;
-        G = 2*pow(10,-2*ForcePower-1)/dt;
-        v->insert(v->end(),CData(1000*MAX_W, 1000*MAX_H,0)); // Так решена проблема, когда две последних налетают друг на друга
+        //G = 2*pow(10,-2*ForcePower-1)/dt;
+        //G = pow(10,pow(abs(ForcePower),abs(ForcePower))+1)/dt;
+        G = 1000000;
+        v->insert(v->end(),CData(10000*MAX_W, 10000*MAX_H,0)); // Так решена проблема, когда две последних налетают друг на друга
         Fl_Double_Window::color(FL_BLACK);
     }
     vector<CData>* getVector()    {
@@ -303,9 +305,11 @@ public:
             (*j).plusVx( sgn(ForcePower)*sgn((*i).getX(), (*j).getX())*Force*dt/(*j).getM() );
             (*i).plusVy( - sgn(ForcePower)*sgn((*i).getY(), (*j).getY())*Force*dt/(*i).getM() );
             (*j).plusVy( sgn(ForcePower)*sgn((*i).getY(), (*j).getY())*Force*dt/(*j).getM() );
+            return;
         }
         else
             impulse(i, j);
+        return;
     }
     void cintoc(vector<CData>::iterator i, vector<CData>::iterator j)
     {
@@ -326,14 +330,23 @@ public:
     }
     void changeCoordinatsAndDraw()
     {
-        for(vector<CData>::iterator i = data->begin(); i != data->end(); i++)
-            for(vector<CData>::iterator j = i+1; j != data->end(); j++)
+        for(vector<CData>::iterator i = data->begin(); i != data->end() - 1; i++)
+            for(vector<CData>::iterator j = i+1; j != data->end() - 1; j++)
             {
                 changeVelocity(i,j);
-                (*i).changeCoordinats(dt);
-                cintoc(i, j); //Круг внутри круга
-                fl_circle((*i).getX()*zoom, (*i).getY()*zoom, (*i).getR()*zoom); //*zoom
             }
+        for(vector<CData>::iterator i = data->begin(); i != data->end() - 1; i++)
+            (*i).changeCoordinats(dt);
+        for(vector<CData>::iterator i = data->begin(); i != data->end() - 1; i++)
+            for(vector<CData>::iterator j = i+1; j != data->end(); j++)
+            {
+                //changeVelocity(i,j);
+                //(*i).changeCoordinats(dt);
+                cintoc(i, j); //Круг внутри круга
+                //fl_circle((*i).getX()*zoom, (*i).getY()*zoom, (*i).getR()*zoom); //*zoom
+            }
+        for(vector<CData>::iterator i = data->begin(); i != data->end() - 1; i++)
+            fl_circle((*i).getX()*zoom, (*i).getY()*zoom, (*i).getR()*zoom); //*zoom
     }
     friend void cs(Fl_Widget*,void*);
 };
